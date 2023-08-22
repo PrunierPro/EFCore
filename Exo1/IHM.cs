@@ -66,7 +66,7 @@ namespace Exo1
         {
             using ApplicationDbContext context = new ApplicationDbContext();
 
-            context.Add(CreateAddress());
+            context.Add(EnterAddressInfo());
             if(context.SaveChanges() > 0) Console.WriteLine("Adresse ajoutée");
             else Console.WriteLine("Erreur d'ajout");
             Console.WriteLine();
@@ -79,28 +79,29 @@ namespace Exo1
 
             Console.WriteLine("=== Editer une adresse ===");
             Console.WriteLine("Entrer les infos de l'adrese à modifier: ");
-            Console.Write("Entrer le numéro de voie: ");
-            int number = int.Parse(Console.ReadLine());
-            Console.Write("Entrer l'intitulé de voie: ");
-            string name = Console.ReadLine();
-            Console.Write("Entrer la commune: ");
-            string commune = Console.ReadLine();
-            Console.WriteLine();
 
-            Address address = context.Addresses.FirstOrDefault(a => a.Number == number && a.Name.Equals(name) && a.Commune.Equals(commune));
-            if (address.Equals(default))
+            Address address = SearchAddress(context);
+
+            if (address is null)
             {
                 Console.WriteLine("Aucune adresse trouvée\n");
             }
             else
             {
                 Console.WriteLine($"Adresse trouvée: {address}");
+                Console.WriteLine("Modifier? Y/N");
+                if (Console.ReadLine().ToUpper().Equals("Y"))
+                {
+                    address = EnterAddressInfo(address);
 
-                address = CreateAddress();
+                    context.Addresses.Update(address);
+                    if (context.SaveChanges() > 0) Console.WriteLine("Adresse modifiée");
+                    else Console.WriteLine("Erreur");
+                } else
+                {
+                    Console.WriteLine("Modification annulée");
+                }
 
-                context.Addresses.Update(address);
-                if(context.SaveChanges() > 0) Console.WriteLine("Adresse modifiée");
-                else Console.WriteLine("Erreur");
                 Console.WriteLine();
             }
             Start();
@@ -112,16 +113,10 @@ namespace Exo1
 
             Console.WriteLine("=== Supprimer une adresse ===");
             Console.WriteLine("Entrer les infos de l'adrese à supprimer: ");
-            Console.Write("Entrer le numéro de voie: ");
-            int number = int.Parse(Console.ReadLine());
-            Console.Write("Entrer l'intitulé de voie: ");
-            string name = Console.ReadLine();
-            Console.Write("Entrer la commune: ");
-            string commune = Console.ReadLine();
-            Console.WriteLine();
 
-            Address address = context.Addresses.FirstOrDefault(a => a.Number == number && a.Name.Equals(name) && a.Commune.Equals(commune));
-            if (address.Equals(default))
+            Address address = SearchAddress(context);
+
+            if (address is null)
             {
                 Console.WriteLine("Aucune adresse trouvée\n");
             }
@@ -143,7 +138,7 @@ namespace Exo1
             Start();
         }
 
-        private static Address CreateAddress()
+        private static Address EnterAddressInfo(Address address = null)
         {
             Console.Write("Entrer le numéro de voie: ");
             int number = int.Parse(Console.ReadLine());
@@ -156,16 +151,39 @@ namespace Exo1
             Console.Write("Entrer le code postal: ");
             int postalcode = int.Parse(Console.ReadLine());
 
-            Address address = new Address()
+            if(address is not null)
             {
-                Number = number,
-                Complement = complement,
-                Name = name,
-                Commune = commune,
-                PostalCode = postalcode
-            };
+                address.Number = number;
+                address.Complement = complement;
+                address.Name = name;
+                address.Commune = commune;
+                address.PostalCode = postalcode;
+            } else
+            {
+                address = new Address()
+                {
+                    Number = number,
+                    Complement = complement,
+                    Name = name,
+                    Commune = commune,
+                    PostalCode = postalcode
+                };
+            }
 
             return address;
+        }
+
+        private static Address SearchAddress(ApplicationDbContext context)
+        {
+            Console.Write("Entrer le numéro de voie: ");
+            int number = int.Parse(Console.ReadLine());
+            Console.Write("Entrer l'intitulé de voie: ");
+            string name = Console.ReadLine();
+            Console.Write("Entrer la commune: ");
+            string commune = Console.ReadLine();
+            Console.WriteLine();
+
+            return context.Addresses.FirstOrDefault(a => a.Number == number && a.Name.Contains(name) && a.Commune.Contains(commune));
         }
     }
 }
